@@ -74,7 +74,19 @@ app.post('/setting/:id', function(req, res) {
     } else {
         res.send("Error: db not connected");
     }
-})
+});
+
+app.post('/setting/', function(req, res) {
+    if (dbConnected) {
+        //db.collection('settings').update({}, req.body, { upsert: true });
+        req.body.foreach(function(item) {
+            db.collection('settings').replaceOne({ "id": item.id }, item, { upsert: true });
+        });
+        res.send("ok");
+    } else {
+        res.send("Error: db not connected");
+    }
+});
 
 
 app.get('/', function(req, res) {
