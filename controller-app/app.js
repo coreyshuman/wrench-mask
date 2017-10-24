@@ -194,3 +194,33 @@ bm.on("open", function() {
 bm.on("data", function(data) {
     console.log(data.toString('hex'));
 });
+
+// setup i2c
+if (process.env.USEHW) {
+    console.log('setup I2C');
+    const i2c = require('i2c');
+    const address = 0x52;
+    const wire = new i2c(address, { device: '/dev/i2c' });
+    // init
+    wire.writeByte(0xF0, function(err) { console.log("Error I2C: " + err); });
+    wire.writeByte(0x55, function(err) { console.log("Error I2C: " + err); });
+    sleep.msleep(1);
+    wire.writeByte(0xFB, function(err) { console.log("Error I2C: " + err); });
+    wire.writeByte(0x00, function(err) { console.log("Error I2C: " + err); });
+
+    function update() {
+        wire.readBytes(0x00, 6, function(err, res) {
+            if (err) {
+                console.log("Error I2C: " + err);
+            } else {
+                let x = res[0];
+                let y = res[1];
+                let z = !(res[5] & 0x1);
+                let c = !((res[5] & 0x2) >> 1);
+                console.log(`x=${x}, y=${y}, z=${z}, c=${c}`);
+            }
+        });
+    }
+
+    setInterval(update, 1000);
+}
