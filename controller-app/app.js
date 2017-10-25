@@ -109,13 +109,15 @@ MongoClient.connect(process.env.DBCONN, function(err, _db) {
     }
 });
 
+/*
 noble.on('discover', (e) => {
     console.log("app:found: " + e.advertisement.localName);
 });
-
+*/
+sleep.msleep(100);
 var bm = null;
-noble.on('stateChange', (e) => {
-    console.log("app:noble stateChanged: " + e);
+//noble.on('stateChange', (e) => {
+    //console.log("app:noble stateChanged: " + e);
     //var bm = new BlendMicro(process.argv[2]);
     bm = new BlendMicro(process.env.BTNAME);
     bm.on("open", function() {
@@ -131,7 +133,7 @@ noble.on('stateChange', (e) => {
     bm.on("data", function(data) {
         console.log(data.toString('hex'));
     });
-});
+//});
 
 const startDataIndex = 7;
 let connected = false;
