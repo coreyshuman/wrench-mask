@@ -110,26 +110,27 @@ MongoClient.connect(process.env.DBCONN, function(err, _db) {
 });
 
 noble.on('discover', (e) => {
-  console.log("app:found: " + e.advertisement.localName);
+    console.log("app:found: " + e.advertisement.localName);
 });
 
+var bm = null;
 noble.on('stateChange', (e) => {
-  console.log("app:noble stateChanged: " + e);
-  //var bm = new BlendMicro(process.argv[2]);
-  const bm = new BlendMicro(process.env.BTNAME);
-  bm.on("open", function() {
-      console.log("open");
-      connected = true;
-      sleep.msleep(100);
-      bm.write(initDevice);
-      console.log("initial command");
-      sleep.msleep(100);
-      sendCommand(new Array(54));
-  });
-  
-  bm.on("data", function(data) {
-      console.log(data.toString('hex'));
-  });
+    console.log("app:noble stateChanged: " + e);
+    //var bm = new BlendMicro(process.argv[2]);
+    bm = new BlendMicro(process.env.BTNAME);
+    bm.on("open", function() {
+        console.log("open");
+        connected = true;
+        sleep.msleep(100);
+        bm.write(initDevice);
+        console.log("initial command");
+        sleep.msleep(100);
+        sendCommand(new Array(54));
+    });
+
+    bm.on("data", function(data) {
+        console.log(data.toString('hex'));
+    });
 });
 
 const startDataIndex = 7;
@@ -173,6 +174,10 @@ command[63] = 0xa9;
 
 
 function sendCommand(data) {
+    if (!connected) {
+        console.log("Sending failed: not connected");
+        return;
+    }
     let parity = 0x07;
     let i = 0;
     let bytesSending = 0;
