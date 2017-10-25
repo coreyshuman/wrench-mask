@@ -1,5 +1,6 @@
 //var BlendMicro = require("#{__dirname}/../../");
 const BlendMicro = require("blendmicro");
+const noble = require('noble');
 const sleep = require('sleep');
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -108,8 +109,28 @@ MongoClient.connect(process.env.DBCONN, function(err, _db) {
     }
 });
 
-//var bm = new BlendMicro(process.argv[2]);
-const bm = new BlendMicro(process.env.BTNAME);
+noble.on('discover', (e) => {
+  console.log("app:found: " + e.advertisement.localName);
+});
+
+noble.on('stateChange', (e) => {
+  console.log("app:noble stateChanged: " + e);
+  //var bm = new BlendMicro(process.argv[2]);
+  const bm = new BlendMicro(process.env.BTNAME);
+  bm.on("open", function() {
+      console.log("open");
+      connected = true;
+      sleep.msleep(100);
+      bm.write(initDevice);
+      console.log("initial command");
+      sleep.msleep(100);
+      sendCommand(new Array(54));
+  });
+  
+  bm.on("data", function(data) {
+      console.log(data.toString('hex'));
+  });
+});
 
 const startDataIndex = 7;
 let connected = false;
@@ -181,26 +202,13 @@ function sendCommand(data) {
 
 }
 
-bm.on("open", function() {
-    console.log("open");
-    connected = true;
-    sleep.msleep(100);
-    bm.write(initDevice);
-    console.log("initial command");
-    sleep.msleep(100);
-    sendCommand(new Array(54));
-});
-
-bm.on("data", function(data) {
-    console.log(data.toString('hex'));
-});
 
 // setup i2c
-if (process.env.USEHW) {
+if (process.env.USEHW == 'true') {
     console.log('setup I2C');
     const i2c = require('i2c');
     const address = 0x52;
-    const wire = new i2c(address, { device: '/dev/i2c' });
+    const wire = new i2c(address, { device: process.env.HWADDR });
     // init
     wire.writeByte(0xF0, function(err) { console.log("Error I2C: " + err); });
     wire.writeByte(0x55, function(err) { console.log("Error I2C: " + err); });
