@@ -78,9 +78,10 @@ app.post('/setting/:id', function(req, res) {
 });
 
 app.post('/setting/', function(req, res) {
-    if (dbConnected) {
+    if (dbConnected && req.body && req.body.length > 0) {
         //db.collection('settings').update({}, req.body, { upsert: true });
-        req.body.foreach(function(item) {
+        req.body.forEach(function(item) {
+	    console.log(item);
             db.collection('settings').replaceOne({ "id": item.id }, item, { upsert: true });
         });
         res.send("ok");
@@ -195,7 +196,7 @@ function sendCommand(data) {
     while (bytesToSend > 0) {
         bytesSending = bytesToSend;
         if (bytesSending > 20) {
-            bytesSending = 20;
+//            bytesSending = 20;
         }
         let sendBuf = command.slice(i, i + bytesSending);
         console.log("send=" + bytesSending + " (" + i + "," + (i + bytesSending) + ")");
@@ -219,11 +220,33 @@ if (process.env.USEHW == 'true') {
     // init
     wire.writeByte(0xF0, function(err) { console.log("Error I2C: " + err); });
     wire.writeByte(0x55, function(err) { console.log("Error I2C: " + err); });
-    sleep.msleep(1);
+    sleep.msleep(5);
     wire.writeByte(0xFB, function(err) { console.log("Error I2C: " + err); });
     wire.writeByte(0x00, function(err) { console.log("Error I2C: " + err); });
-
+    console.log("I2C config done");
     function update() {
+       let data = [0,0,0,0,0,0];
+       wire.writeByte(0x00, function(err) {console.log("I2C Error: " + err)});
+       sleep.msleep(5);
+       var wait = true;
+       var tmo;
+       for(let i = 0; i < 6; i++) {
+         wait = true;
+         tmo = 100;
+         wire.readByte(function(err, res) {
+           if(err) console.log("I2C read err:" + err);
+           else data[i] = res;
+           wait = false;
+         });
+         while(wait && --tmo > 0) {sleep.msleep(1)};
+       }
+                var res = data;
+                let x = res[0];
+                let y = res[1];
+                let z = !(res[5] & 0x1);
+                let c = !((res[5] & 0x2) >> 1);
+                console.log(`x=${x}, y=${y}, z=${z}, c=${c}`);
+       /*
         wire.readBytes(0x00, 6, function(err, res) {
             if (err) {
                 console.log("Error I2C: " + err);
@@ -235,6 +258,7 @@ if (process.env.USEHW == 'true') {
                 console.log(`x=${x}, y=${y}, z=${z}, c=${c}`);
             }
         });
+        */
     }
 
     setInterval(update, 1000);
